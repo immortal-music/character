@@ -42,24 +42,46 @@ last_user_tracker = {}
 # --- Group Management Handlers ---
 
 async def on_new_chat_members(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Bot က Group အသစ်ထဲ ဝင်လာရင် DB ထဲ မှတ်ထားပါ"""
+    """Bot က Group အသစ်ထဲ ဝင်လာရင် Member 100 ရှိမရှိ စစ်ပါ။"""
     me = await context.bot.get_me()
     chat = update.effective_chat
     
     if chat.type in ["group", "supergroup"]:
         for new_member in update.message.new_chat_members:
             if new_member.id == me.id:
-                print(f"Game Bot joined a new group: {chat.title} (ID: {chat.id})")
-                gamedb.add_group(chat.id, chat.title)
+                # Bot ကိုယ်တိုင် အသစ်ဝင်လာတာ
                 try:
-                    await context.bot.send_message(
-                        chat_id=chat.id,
-                        text=f"👋 မင်္ဂလာပါ! {me.first_name} ပါရှင့်။\n"
-                             f"ဒီ Group မှာ Message 50 ပြည့်တိုင်း Character တွေ ပေါ်လာပါမယ်။\n"
-                             f"/catch [name] နဲ့ ဖမ်းနိုင်ပါပြီ။"
-                    )
+                    # Member အရေအတွက်ကို စစ်ပါ
+                    member_count = await context.bot.get_chat_member_count(chat.id)
+                    
+                    if member_count < 100:
+                        # 100 မပြည့်ရင်
+                        await context.bot.send_message(
+                            chat_id=chat.id,
+                            text=f"❌ ဤ Group တွင် Member {member_count} ယောက်သာ ရှိပါသည်။\n"
+                                 f"Member 100 ပြည့်သော Group များတွင်သာ ဤ Bot ကို အသုံးပြုနိုင်ပါသည်။\n\n"
+                                 f"Bot မှ ယခု Group မှ ပြန်လည် ထွက်ခွာပါမည်။"
+                        )
+                        await context.bot.leave_chat(chat.id)
+                        print(f"Bot left group '{chat.title}' (ID: {chat.id}) due to insufficient members (Count: {member_count}).")
+                        
+                    else:
+                        # 100 ပြည့်ရင် DB ထဲ မှတ်ထား
+                        print(f"Bot joined a new group: {chat.title} (ID: {chat.id}) (Count: {member_count})")
+                        db.add_group(chat.id, chat.title)
+                        await context.bot.send_message(
+                            chat_id=chat.id,
+                            text="👋 မင်္ဂလာပါ! Sᴀsᴜᴋᴇ Mʟʙʙ Tᴏᴘ Uᴘ Bᴏᴛ ပါရှင့်။\n"
+                                 "ဒီ Group မှာ Member 100 ပြည့်တဲ့အတွက် Bot ကို အသုံးပြုနိုင်ပါပြီ။"
+                        )
+                        
                 except Exception as e:
-                    print(f"Error sending welcome message to group: {e}")
+                    print(f"Error checking member count in new group: {e}")
+                    # Error တက်ရင်လည်း (ဥပမာ Bot က Admin မဟုတ်ရင်) ပြန်ထွက်
+                    try:
+                        await context.bot.leave_chat(chat.id)
+                    except:
+                        pass
 
 async def on_left_chat_member(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Bot က Group ကနေ ထွက်သွားရင် DB ကနေ ဖြုတ်ပါ"""
