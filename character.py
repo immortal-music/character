@@ -168,7 +168,7 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             url=f"https://t.me/{bot_username}?startgroup=true"
         )],
         [
-            InlineKeyboardButton(" ꜱᴜᴘᴘᴏʀᴛ ", url=f"t.me/everythingreset}"),
+            InlineKeyboardButton(" ꜱᴜᴘᴘᴏʀᴛ ", url=f"t.me/everythingreset"),
             InlineKeyboardButton(" ᴜᴘᴅᴀᴛᴇꜱ ", url=f"t.me/sasukemusicsupportchat") # (ကိုကို့ Update Channel Link ရှိရင် ဒီမှာ ပြောင်းထည့်ပါ)
         ]
     ]
