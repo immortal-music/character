@@ -33,7 +33,7 @@ except Exception as e:
     exit()
 
 # --- (ပြင်ဆင်ပြီး) Global Settings ---
-SPAWN_MESSAGE_COUNT = 50 # 50 messages to spawn
+SPAWN_MESSAGE_COUNT = 10 # 50 messages to spawn
 ANTI_SPAM_LIMIT = 10 # 10 consecutive messages
 
 # In-memory tracking
@@ -271,7 +271,7 @@ async def add_character_command(update: Update, context: ContextTypes.DEFAULT_TY
         return
         
     try:
-        rarity = args[0].upper()
+        rarity = args[2].upper()
         image_url = args[1]
         name = " ".join(args[2:])
         
