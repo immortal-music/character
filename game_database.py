@@ -7,7 +7,7 @@ import random
 
 # --- MongoDB Connection ---
 try:
-    # (P.S: ဒီ Bot က သီးသန့်မို့၊ MONGO_URL အသစ် သုံးချင်လည်း သုံးလို့ရပါတယ်)
+    # (Top-up Bot နဲ့ MONGO_URL အတူတူ သုံးလို့ရပါတယ်)
     MONGO_URL = os.environ.get("MONGO_URL")
     if not MONGO_URL:
         print("Error: MONGO_URL environment variable မတွေ့ပါ။")
@@ -70,6 +70,18 @@ def get_random_character():
     if not all_chars:
         return None
     return random.choice(all_chars)
+
+def get_all_character_names():
+    """(ကိုကို့ /wang command အတွက်) DB ထဲက Character နာမည်တွေ အကုန် ယူပါ။"""
+    if not client: return []
+    try:
+        # နာမည်တွေကိုပဲ ဆွဲထုတ်ပြီး A-Z စီ
+        cursor = characters_collection.find({}, {"name": 1, "_id": 0}).sort("name", 1)
+        names_list = [doc.get("name") for doc in cursor if doc.get("name")]
+        return names_list
+    except Exception as e:
+        print(f"Error getting all character names: {e}")
+        return []
 
 # --- Game Logic Functions ---
 
