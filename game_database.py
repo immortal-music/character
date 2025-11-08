@@ -28,6 +28,7 @@ except Exception as e:
 # --- Group Management ---
 
 def add_group(chat_id, group_name):
+    """Bot ဝင်ထားသော Group ID ကို DB ထဲ မှတ်ထားပါ။"""
     if not client: return
     active_groups_collection.update_one(
         {"_id": chat_id},
@@ -35,10 +36,18 @@ def add_group(chat_id, group_name):
         upsert=True
     )
 
-# game_database.py (add_group အောက်မှာ ထည့်ပါ)
+def remove_group(chat_id):
+    """Bot ထွက်သွားသော Group ID ကို DB မှ ဖျက်ပါ။"""
+    if not client: return
+    active_groups_collection.delete_one({"_id": chat_id})
+
+def get_all_groups():
+    """Bot ဝင်ထားသော Group ID များအားလုံးကို ယူပါ။"""
+    if not client: return []
+    return [doc["_id"] for doc in active_groups_collection.find({}, {"_id": 1})]
 
 def set_group_last_catcher(group_id, user_name):
-    """Group မှာ နောက်ဆုံးဖမ်းသွားတဲ့သူကို မှတ်ထားပါ"""
+    """Group မှာ နောက်ဆုံးဖမ်းသွားတဲ့သူကို မှတ်ထားပါ (Already Caught အတွက်)"""
     if not client: return
     active_groups_collection.update_one(
         {"_id": group_id},
@@ -50,14 +59,6 @@ def get_group_last_catcher(group_id):
     if not client: return None
     doc = active_groups_collection.find_one({"_id": group_id})
     return doc.get("last_caught_by") if doc else None
-
-def remove_group(chat_id):
-    if not client: return
-    active_groups_collection.delete_one({"_id": chat_id})
-
-def get_all_groups():
-    if not client: return []
-    return [doc["_id"] for doc in active_groups_collection.find({}, {"_id": 1})]
 
 # --- Character Management (Admin) ---
 
@@ -71,8 +72,8 @@ def add_character(name, image_url, rarity, anime, emoji):
             "name_lower": name.lower(),
             "image_url": image_url,
             "rarity": rarity,
-            "anime": anime, # (အသစ်)
-            "emoji": emoji  # (အသစ်)
+            "anime": anime, 
+            "emoji": emoji
         }},
         upsert=True
     )
@@ -95,6 +96,11 @@ def get_all_character_names():
     except Exception as e:
         print(f"Error getting all character names: {e}")
         return []
+
+def get_total_anime_collection_count(anime_name):
+    """ဒီ Anime မှာ စုစုပေါင်း Character ဘယ်နှစ်ကောင် ရှိလဲ စစ်ပါ။"""
+    if not client: return 0
+    return characters_collection.count_documents({"anime": anime_name})
 
 # --- Game Logic Functions ---
 
@@ -151,17 +157,10 @@ def get_user_anime_collection_count(user_id, anime_name):
         "user_id": user_id, 
         "character_anime": anime_name
     })
-    
-def get_total_anime_collection_count(anime_name):
-    """ဒီ Anime မှာ စုစုပေါင်း Character ဘယ်နှစ်ကောင် ရှိလဲ စစ်ပါ။"""
-    if not client: return 0
-    return characters_collection.count_documents({"anime": anime_name})
-    
-
 
 def wipe_game_data():
     """
-    !!! Game Bot DATA အားလုံးကို ဖျက်ဆီးပါမည် !!!
+    !!! Game Bot DATA အားလုံးကို ဖျက်ဆီးပါမည် !!! (/cleanmongodb အတွက်)
     """
     if not client:
         return False
