@@ -15,8 +15,13 @@ except ImportError:
 
 # --- (အသစ်) Environment Variables (Game Bot အတွက်) ---
 try:
+    # (BotFather မှာ Bot အသစ်တောင်းပြီး Token အသစ် ထည့်ပါ)
     GAME_BOT_TOKEN = os.environ.get("GAME_BOT_TOKEN") 
+    
+    # (ကိုကို့ရဲ့ Admin ID)
     OWNER_ID = int(os.environ.get("ADMIN_ID"))
+    
+    # (DB URL ကတော့ Top-up Bot နဲ့ အတူတူ သုံးလို့ရပါတယ်)
     MONGO_URL = os.environ.get("MONGO_URL") 
     
     if not all([GAME_BOT_TOKEN, OWNER_ID, MONGO_URL]):
@@ -51,10 +56,10 @@ async def on_new_chat_members(update: Update, context: ContextTypes.DEFAULT_TYPE
             if new_member.id == me.id:
                 # Bot ကိုယ်တိုင် အသစ်ဝင်လာတာ
                 try:
-                    # Member အရေအတွက်ကို စစ်ပါ
+                    # (Response 107 Logic) Member အရေအတွက်ကို စစ်ပါ
                     member_count = await context.bot.get_chat_member_count(chat.id)
                     
-                    if member_count < 100:
+                    if member_count < 100: #
                         # 100 မပြည့်ရင်
                         await context.bot.send_message(
                             chat_id=chat.id,
@@ -63,16 +68,17 @@ async def on_new_chat_members(update: Update, context: ContextTypes.DEFAULT_TYPE
                                  f"Bot မှ ယခု Group မှ ပြန်လည် ထွက်ခွာပါမည်။"
                         )
                         await context.bot.leave_chat(chat.id)
-                        print(f"Bot left group '{chat.title}' (ID: {chat.id}) due to insufficient members (Count: {member_count}).")
-                        
+                        print(f"Game Bot left group '{chat.title}' (ID: {chat.id}) due to insufficient members (Count: {member_count}).")
+                    
                     else:
                         # 100 ပြည့်ရင် DB ထဲ မှတ်ထား
-                        print(f"Bot joined a new group: {chat.title} (ID: {chat.id}) (Count: {member_count})")
-                        db.add_group(chat.id, chat.title)
+                        print(f"Game Bot joined a new group: {chat.title} (ID: {chat.id}) (Count: {member_count})")
+                        gamedb.add_group(chat.id, chat.title) # [Response 101]
                         await context.bot.send_message(
                             chat_id=chat.id,
-                            text="👋 မင်္ဂလာပါ! Sᴀsᴜᴋᴇ Mʟʙʙ Tᴏᴘ Uᴘ Bᴏᴛ ပါရှင့်။\n"
-                                 "ဒီ Group မှာ Member 100 ပြည့်တဲ့အတွက် Bot ကို အသုံးပြုနိုင်ပါပြီ။"
+                            text=f"👋 မင်္ဂလာပါ! {me.first_name} ပါရှင့်။\n"
+                                 f"ဒီ Group မှာ Message 50 ပြည့်တိုင်း Character တွေ ပေါ်လာပါမယ်။\n"
+                                 f"/catch [name] နဲ့ ဖမ်းနိုင်ပါပြီ။" # [Response 105]
                         )
                         
                 except Exception as e:
@@ -140,7 +146,8 @@ async def handle_group_message(update: Update, context: ContextTypes.DEFAULT_TYP
     else:
         group_message_counts[chat_id] += 1
         
-    # print(f"Group {chat_id} count is now: {group_message_counts[chat_id]}") # (Debug လုပ်ချင်ရင် ဒီ line ကို ဖွင့်ပါ)
+    # (Debug လုပ်ချင်ရင် ဒီ line ကို ဖွင့်ပါ)
+    # print(f"Group {chat_id} count: {group_message_counts[chat_id]} / {SPAWN_MESSAGE_COUNT}") 
 
     # (၅) 50 ပြည့်မပြည့် စစ်ပါ
     if group_message_counts.get(chat_id, 0) >= SPAWN_MESSAGE_COUNT:
@@ -170,7 +177,7 @@ async def handle_group_message(update: Update, context: ContextTypes.DEFAULT_TYP
         except Exception as e:
             print(f"Error spawning character in group {chat_id}: {e}")
 
-# --- User Commands (မပြောင်းပါ) ---
+# --- User Commands ---
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("👋 မင်္ဂလာပါ! Character Catching Bot ပါ။\nGroup တွေထဲမှာ Message 50 ပြည့်တိုင်း Character တွေ ပေါ်လာပါမယ်။\n/catch [name] နဲ့ ဖမ်းနိုင်ပါတယ်။")
@@ -250,7 +257,7 @@ async def wang_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_text(f"✅ စုစုပေါင်း Character `{count}` ကောင် တွေ့ရှိပါသည်။")
 
-# --- Owner Commands (မပြောင်းပါ) ---
+# --- Owner Commands ---
 
 async def add_character_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """(Owner Only) Character အသစ် ထည့်ရန်"""
@@ -286,7 +293,7 @@ def main():
 
     application = Application.builder().token(GAME_BOT_TOKEN).build() 
 
-    # --- (JobQueue (Timer) ကို ဖြုတ်လိုက်ပါပြီ) ---
+    # --- (JobQueue (Timer) ကို ဖြုတ်ထားပါသည်) ---
 
     # --- Handlers ---
     application.add_handler(CommandHandler("start", start_command))
