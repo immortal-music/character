@@ -36,6 +36,18 @@ group_message_counts = {}
 last_user_tracker = {}
 
 
+def create_hint(name):
+    """ "Wang Lin" ကို "W*g L*n" အဖြစ် Hint ပြောင်းပေးပါ။"""
+    hint = ""
+    words = name.split(' ')
+    processed_words = []
+    for word in words:
+        if len(word) <= 2:
+            processed_words.append(word[0] + "*" * (len(word) - 1))
+        else:
+            processed_words.append(word[0] + "*" * (len(word) - 2) + word[-1])
+    return " ".join(processed_words)
+
 # --- Group Management Handlers ---
 
 async def on_new_chat_members(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -137,10 +149,15 @@ async def handle_group_message(update: Update, context: ContextTypes.DEFAULT_TYP
             char_name = character_obj.get("name", "Unknown")
             char_image = character_obj.get("image_url", "")
             
+            # --- (ပြင်ဆင်ပြီး) Hint ဖန်တီးပါ ---
+            hint_name = create_hint(char_name)
+            
             await context.bot.send_photo(
                 chat_id=chat_id,
                 photo=char_image,
-                caption=f"A CHARACTER HAS SPAWNED! 😱\n\nADD THIS CHARACTER TO YOUR HAREM USING `/catch {char_name}`"
+                caption=f"A CHARACTER HAS SPAWNED! 😱\n\n"
+                        f"ADD THIS CHARACTER TO YOUR HAREM USING `/catch [NAME]`\n\n"
+                        f"**Hint:** `{hint_name}`"
             )
             # DB ထဲမှာ Object တစ်ခုလုံးကို မှတ်ထား
             gamedb.set_active_spawn(chat_id, character_obj) 
@@ -151,10 +168,38 @@ async def handle_group_message(update: Update, context: ContextTypes.DEFAULT_TYP
 # --- User Commands ---
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("👋 မင်္ဂလာပါ! Character Catching Bot ပါ။\nGroup တွေထဲမှာ Message 50 ပြည့်တိုင်း Character တွေ ပေါ်လာပါမယ်။\n/catch [name] နဲ့ ဖမ်းနိုင်ပါတယ်။")
+    """Bot ကိုစဖွင့်ရင် (ပုံစံအသစ် နဲ့) ကြိုဆိုပါ။"""
+    user_name = update.effective_user.first_name
+    me = await context.bot.get_me()
+    bot_username = me.username
+    
+    # --- (အသစ်) Buttons ---
+    keyboard = [
+        # "Add me to your group" button
+        [InlineKeyboardButton(
+            "✚ ADD ME TO YOUR GROUP ✚", 
+            url=f"https://t.me/{bot_username}?startgroup=true"
+        )],
+        # Support & Updates buttons
+        [
+            InlineKeyboardButton(" Sᴜᴘᴘᴏʀᴛ ", url=f"t.me/everythingreset"),
+            InlineKeyboardButton(" Uᴘᴅᴀᴛᴇs ", url=f"t.me/sasukevipmusicbotsupport") # (ကိုကို့ Update Channel Link ရှိရင် ဒီမှာ ပြောင်းထည့်ပါ)
+        ]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    # --- (အသစ်) Message Text ---
+    start_msg = (
+        f"👋 **HEY THERE, {user_name}!**\n\n"
+        f"◎ MYSELF **{me.first_name}**\n"
+        f"◎ I SPAWN CHARACTERS IN CHATS AFTER 50 MESSAGES AND LET USERS CATCH THEM.\n\n"
+        f"Add me to your group and start catching!"
+    )
+    
+    await update.message.reply_text(start_msg, reply_markup=reply_markup, parse_mode="Markdown")
 
 async def catch_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Character ကို ဖမ်းမယ့် command (ပုံစံအလှ ပြင်ပြီး)"""
+    """Character ကို ဖမ်းမယ့် command (ပြင်ဆင်ပြီး)"""
     user = update.effective_user
     chat = update.effective_chat
     
@@ -162,11 +207,23 @@ async def catch_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("❌ /catch command ကို Group တွေထဲမှာပဲ သုံးလို့ရပါတယ်ရှင့်။")
         return
 
-    # (ပြင်ဆင်ပြီး) DB ထဲက Character Object အပြည့်အစုံကို ယူပါ
+    # (၁) DB ထဲက Character Object အပြည့်အစုံကို ယူပါ
     active_char_obj = gamedb.get_active_spawn(chat.id) 
+    
     if not active_char_obj:
-        await update.message.reply_text("😅 ဒီ Group မှာ အခု ဖမ်းစရာ Character မရှိသေးပါဘူးရှင့်။")
+        # --- (အသစ်) "Already Caught" Logic ---
+        last_catcher_name = gamedb.get_group_last_catcher(chat.id)
+        if last_catcher_name:
+            await update.message.reply_text(
+                f"🌸 Cʜᴀʀᴀᴄᴛᴇʀ Aʟʀᴇᴀᴅʏ Cᴀᴜɢʜᴛ Bʏ\n**{last_catcher_name}**\n\n"
+                f"🥤 Wᴀɪᴛ Fᴏʀ Nᴇᴡ Cʜᴀʀᴀᴄᴛᴇʀ Tᴏ Sᴘᴀᴡɴ",
+                parse_mode="Markdown"
+            )
+        else:
+            # (မူလ Message)
+            await update.message.reply_text("😅 ဒီ Group မှာ အခု ဖမ်းစရာ Character မရှိသေးပါဘူးရှင့်။")
         return
+        # --- (ပြီး) ---
         
     active_char_name_lower = active_char_obj.get("name_lower", "")
     
@@ -176,20 +233,22 @@ async def catch_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         guessed_name = ""
         
     if guessed_name.lower() != active_char_name_lower:
-        await update.message.reply_text(f"❌ နာမည် မှားနေပါတယ်ရှင့်! (Hint: `{active_char_obj.get('name', 'Unknown')}`)")
+        # (Response 129 က Hint Logic)
+        hint_name = create_hint(active_char_obj.get("name", "Unknown"))
+        await update.message.reply_text(f"❌ နာမည် မှားနေပါတယ်ရှင့်! (Hint: `{hint_name}`)")
         return
         
     # (အောင်မြင်သွားပြီ)
-    gamedb.catch_character(user.id, user.first_name, active_char_obj) # Pass the object
-    gamedb.set_active_spawn(chat.id, None) # Group ထဲက ပြန်ဖျက်
+    gamedb.catch_character(user.id, user.first_name, active_char_obj) # User DB ထဲ ထည့်
+    gamedb.set_active_spawn(chat.id, None) # Group DB ကနေ ရှင်း
+    gamedb.set_group_last_catcher(chat.id, user.first_name) # (အသစ်) နောက်ဆုံးဖမ်းသူကို မှတ်
     
-    # --- (အသစ်) "Gotcha" Message (inspired by) ---
+    # --- ("Gotcha" Message - Response 108) ---
     char_name = active_char_obj.get("name", "Unknown")
     char_rarity = active_char_obj.get("rarity", "N/A")
     char_anime = active_char_obj.get("anime", "Unknown Series")
     char_emoji = active_char_obj.get("emoji", "")
     
-    # (Collection Counter Logic)
     user_harem_count_in_anime = gamedb.get_user_anime_collection_count(user.id, char_anime)
     total_in_anime = gamedb.get_total_anime_collection_count(char_anime)
     
@@ -209,7 +268,7 @@ async def harem_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     my_harem = gamedb.get_user_harem(user_id)
     
     if not my_harem:
-        await update.message.reply_text("ကိုကို့မှာ ဖမ်းမိထားတဲ့ Character တစ်ကောင်မှ မရှိသေးပါဘူးရှင့်။ 😥")
+        await update.message.reply_text("သင့်မှာ ဖမ်းမိထားတဲ့ Character တစ်ကောင်မှ မရှိသေးပါဘူးရှင့်။ 😥")
         return
         
     msg = f"💖 **{update.effective_user.first_name} ၏ Harem Collection** 💖\n\n"
@@ -271,7 +330,7 @@ async def add_character_command(update: Update, context: ContextTypes.DEFAULT_TY
             "❌ **Format မှားနေပါပြီ!**\n"
             "`/addchar <Name> | <Image_URL> | <Rarity> | <Anime Series> | <Emoji>`\n\n"
             "**ဥပမာ:**\n"
-            "`/addchar Goku | https://i.imgur.com/link.jpg | Rare | Dragon Ball Series | ⚽️`",
+            "`/addchar Goku | https://i.imgur.com/link.jpg | Rare | Dragon Ball Series | [🐬]`",
             parse_mode="Markdown"
         )
         return
@@ -288,9 +347,9 @@ async def add_character_command(update: Update, context: ContextTypes.DEFAULT_TY
         await update.message.reply_photo(
             photo=image_url,
             caption=f"✅ **Character အသစ် ထည့်ပြီးပါပြီ!**\n\n"
-                    f"**Name:** {name} {emoji}\n"
-                    f"**Rarity:** {rarity}\n"
-                    f"**Anime:** {anime}",
+                    f"**Nᴀᴍᴇ:** {name} {emoji}\n"
+                    f"**𝙍𝙖𝙧𝙞𝙩𝙮:** {rarity}\n"
+                    f"**Aɴɪᴍᴇ:** {anime}",
             parse_mode="Markdown"
         )
     except Exception as e:
