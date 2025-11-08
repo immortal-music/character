@@ -19,7 +19,7 @@ try:
     GAME_BOT_TOKEN = os.environ.get("GAME_BOT_TOKEN") 
     
     # (ကိုကို့ရဲ့ Admin ID)
-    OWNER_ID = int(os.environ.get("ADMIN_ID"))
+    OWNER_ID = int(os.environ.get("OWNER_ID"))
     
     # (DB URL ကတော့ Top-up Bot နဲ့ အတူတူ သုံးလို့ရပါတယ်)
     MONGO_URL = os.environ.get("MONGO_URL") 
