@@ -36,6 +36,20 @@ def add_group(chat_id, group_name):
         upsert=True
     )
 
+def set_group_last_catcher(group_id, user_name):
+    """Group မှာ နောက်ဆုံးဖမ်းသွားတဲ့သူကို မှတ်ထားပါ (Already Caught အတွက်)"""
+    if not client: return
+    active_groups_collection.update_one(
+        {"_id": group_id},
+        {"$set": {"last_caught_by": user_name}}
+    )
+
+def get_group_last_catcher(group_id):
+    """Group မှာ နောက်ဆုံးဖမ်းသွားတဲ့သူကို ပြန်ယူပါ"""
+    if not client: return None
+    doc = active_groups_collection.find_one({"_id": group_id})
+    return doc.get("last_caught_by") if doc else None
+
 def remove_group(chat_id):
     """Bot ထွက်သွားသော Group ID ကို DB မှ ဖျက်ပါ။"""
     if not client: return
