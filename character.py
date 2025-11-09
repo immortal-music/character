@@ -197,17 +197,20 @@ async def catch_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     active_char_obj = gamedb.get_active_spawn(chat.id) 
     
     if not active_char_obj:
-        # --- (အသစ်) "Already Caught" Logic ---
+        # --- (ပြင်ဆင်ပြီး) "Already Caught" Logic ---
         last_catcher_name = gamedb.get_group_last_catcher(chat.id)
         if last_catcher_name:
+            # နောက်ဆုံးဖမ်းထားသူ ရှိရင်၊ "Already Caught" message ပြပါ
             await update.message.reply_text(
                 f"🌸 Cʜᴀʀᴀᴄᴛᴇʀ ᴀʟʀᴇᴀᴅʏ ᴄᴀᴜɢʜᴛ ʙʏ\n**{last_catcher_name}**\n\n"
                 f"🥤 ᴡᴀɪᴛ ꜰᴏʀ ɴᴇᴡ ᴄʜᴀʀᴀᴄᴛᴇʀ ᴛᴏ ꜱᴘᴀᴡɴ",
                 parse_mode="Markdown"
             )
         else:
-            # (မူလ Message)
-            await update.message.reply_text("ဒီ Group မှာ အခု ဖမ်းစရာ Character မရှိသေးပါဘူးရှင့်။")
+            # (ကိုကိုတောင်းဆိုထားသည့်အတိုင်း)
+            # Bot စဝင်လာပြီး ဘယ်သူမှ မဖမ်းရသေးရင် (ဒါမှမဟုတ်) Character မရှိသေးရင်
+            # ဘာမှ စာမပြန်ဘဲ (Silent) နေပါ
+            pass 
         return
         # --- (ပြီး) ---
         
@@ -219,7 +222,7 @@ async def catch_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         guessed_name = ""
         
     if guessed_name.lower() != active_char_name_lower:
-        # --- (ပြင်ဆင်ပြီး) Hint ဖြုတ်ပြီး နာမည်အမှန်ကိုပဲ Hint ပြန်ပေး ---
+        # (Response 131 က Hint ဖြုတ်ထားတဲ့ Logic)
         await update.message.reply_text(f"❌ နာမည် မှားနေပါတယ်ရှင့်! (Hint: `{active_char_obj.get('name', 'Unknown')}`)")
         return
         
@@ -253,7 +256,7 @@ async def harem_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     my_harem = gamedb.get_user_harem(user_id)
     
     if not my_harem:
-        await update.message.reply_text("သင့်မှာ ဖမ်းမိထားတဲ့ Character တစ်ကောင်မှ မရှိသေးပါဘူးရှင့်။ 😥")
+        await update.message.reply_text("သင့်မှာ ဖမ်းမိထားတဲ့ Character တစ်ကောင်မှ မရှိသေးပါဘူးရှင့်။")
         return
         
     msg = f"💖 **{update.effective_user.first_name} ၏ Harem Collection** 💖\n\n"
