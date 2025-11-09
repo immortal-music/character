@@ -28,8 +28,8 @@ except Exception as e:
     exit()
 
 # --- Global Settings ---
-SPAWN_MESSAGE_COUNT = 100 # 100 messages to spawn
-ANTI_SPAM_LIMIT = 8 # 10 consecutive messages
+SPAWN_MESSAGE_COUNT = 10 # 100 messages to spawn
+ANTI_SPAM_LIMIT = 5 # 10 consecutive messages
 
 # In-memory tracking
 group_message_counts = {}
