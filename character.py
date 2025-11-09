@@ -223,7 +223,7 @@ async def catch_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
     if guessed_name.lower() != active_char_name_lower:
         # (Response 131 က Hint ဖြုတ်ထားတဲ့ Logic)
-        await update.message.reply_text(f"❌ နာမည် မှားနေပါတယ်ရှင့်! (Hint: `{active_char_obj.get('name', 'Unknown')}`)")
+        await update.message.reply_text(f"❌ နာမည် မှားနေပါတယ်ရှင့်။")
         return
         
     # (အောင်မြင်သွားပြီ)
@@ -397,18 +397,20 @@ def main():
     
     # Owner Command
     application.add_handler(CommandHandler("addchar", add_character_command))
-    application.add_handler(CommandHandler("wang", wang_command)) #
-    application.add_handler(CommandHandler("cleanmongodb", clean_game_db_command)) #
+    application.add_handler(CommandHandler("wang", wang_command)) 
+    application.add_handler(CommandHandler("cleanmongodb", clean_game_db_command)) 
 
     # Group Management
     application.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, on_new_chat_members))
     application.add_handler(MessageHandler(filters.StatusUpdate.LEFT_CHAT_MEMBER, on_left_chat_member))
 
-    # --- (အသစ်) Message 100 Handler ---
+    # --- (ပြင်ဆင်ပြီး) Message 100 Handler ---
+    # filters.TEXT အစား filters.ALL ကို သုံးပြီး အားလုံးကို ရေတွက်ပါ
     application.add_handler(MessageHandler(
-        filters.TEXT & ~filters.COMMAND & filters.ChatType.GROUPS, 
+        filters.ALL & ~filters.COMMAND & filters.ChatType.GROUPS, 
         handle_group_message
     ))
+    # --- (ပြီး) ---
 
     print("🚀 Game Bot အဆင်သင့်ဖြစ်ပါပြီ။ (Message Count Mode)")
     application.run_polling()
